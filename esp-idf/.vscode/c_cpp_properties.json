@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:\\Users\\k_sum\\Desktop\\esp-idf\\esp-idf-v4.4.3",
+                "C:\\Users\\k_sum\\Desktop\\esp-idf\\esp-idf-v4.4.3/**",
+                "C:\\Users\\k_sum\\Desktop\\esp-idf\\esp-idf-v4.4.3\\components/**",
+                "C:\\Users\\k_sum\\Desktop\\esp-idf\\esp-idf-v4.4.3\\components\\newlib/**",
+                "C:\\Users\\k_sum\\Desktop\\esp-idf\\esp-idf-v4.4.3\\components\\newlib\\platform_include/**",
+                "C:\\Users\\k_sum\\Desktop\\esp-idf\\esp-idf-v4.4.3\\components\\newlib\\platform_include\\sys"
+            ],
+            "intelliSenseMode": "windows-msvc-x64"
+        }
+    ],
+    "version": 4
+}

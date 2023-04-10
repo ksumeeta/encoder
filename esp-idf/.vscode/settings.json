@@ -1,0 +1,11 @@
+{
+	"idf.adapterTargetName": "esp32",
+	"editor.fontSize": 20,
+	"editor.tabSize": 10,
+	"editor.wordWrap": "wordWrapColumn",
+	"editor.wrappingIndent": "same",
+	"editor.wordWrapColumn": 160,
+	"files.associations": {
+		
+	},
+}
