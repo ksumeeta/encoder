@@ -19,6 +19,15 @@
 
 #define ESP_INTR_FLAG_DEFAULT 0
 
+/*
+# Encode setup
+Get the pinout details of esp32 module.
+
+Attach :
+GPIO23 of ESP32 to CLK of Encoder
+GPIO22 of ESP32 to DT of Encoder
+*/
+
 #define SW 15
 #define DT 22
 #define CLK 23
@@ -30,13 +39,17 @@ bool ClockWiseDir;
 bool clkB;
 bool dtB;
 
+// Queue for interrupt
 static QueueHandle_t encoderQueue = NULL;
 
+// Structure for data to be passed to the Queue
 typedef struct {
   uint32_t gpioNum; /*!< GPIO pin: set with bit mask, each bit maps to a GPIO */
   bool gpioValue;
 } encoderData_t;
 
+// GPIO Interrupt Service Routine. Will be fired when GPIO 22 or 23 Changes its
+// level and will send the data to Queue.
 static void IRAM_ATTR encoderISR(void *arg) {
   uint32_t gpioNum = (uint32_t)arg;
   encoderData_t encoderData;
@@ -49,14 +62,18 @@ static void IRAM_ATTR encoderISR(void *arg) {
   xQueueSendFromISR(encoderQueue, &encoderData, NULL);
 }
 
+// Main Encode Task. This Task will wait for the Queue data, when the interrupt
+// is fired.
 static void encoderTask(void *args) {
   uint8_t i = 0;
-  while (1) {
+  while (1) { // infinite Loop
     encoderData_t encoderData;
     uint32_t gpioNum;
+
+    // Queue waiting for MAX_DELAY
     if (xQueueReceive(encoderQueue, &encoderData, portMAX_DELAY)) {
       gpioNum = encoderData.gpioNum;
-
+      // Rotation Counting Logic
       if ((gpioNum == CLK)) {
         if ((encoderData.gpioValue) && (gpio_get_level(gpioNum)) &&
             (clkB == false)) {
@@ -106,20 +123,17 @@ static void encoderTask(void *args) {
   }
 }
 
+// Setting GPIO pins for inputmode and configuring the interrupts
 static void gpioInit() {
   gpio_reset_pin(CLK);
   gpio_reset_pin(DT);
   gpio_reset_pin(SW);
 
-  // gpio_set_direction(CLK, GPIO_MODE_DEF_INPUT);
+  // gpio_set_direction(CLK, GPIO_MODE_INPUT);
   // gpio_set_pull_mode(CLK, GPIO_PULLUP_ONLY);
 
-  // gpio_set_direction(DT, GPIO_MODE_DEF_INPUT);
+  // gpio_set_direction(DT, GPIO_MODE_INPUT);
   // gpio_set_pull_mode(DT, GPIO_PULLUP_ONLY);
-
-  // gpio_set_direction(SW, GPIO_MODE_DEF_OUTPUT);
-  // gpio_set_pull_mode(SW, GPIO_PULLUP_ONLY);
-  // gpio_set_level(SW, 1);
 
   gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
   gpio_isr_handler_add(DT, encoderISR, (void *)DT);
@@ -148,6 +162,9 @@ static void gpioInit() {
 }
 
 void app_main(void) {
+
+  // Checking Non Volatile Flash---standard startup routine to check the health
+  // of Module Flash.
   esp_err_t ret = nvs_flash_init();
   if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
       ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -161,8 +178,13 @@ void app_main(void) {
            "Count: UsedEntries = (%d), FreeEntries = (%d), AllEntries = (%d)",
            nvs_stats.used_entries, nvs_stats.free_entries,
            nvs_stats.total_entries);
+  // Checking Non Volatile Flash---standard startup routine to check the health
+  // of Module Flash.
 
+  // Create Queue
   encoderQueue = xQueueCreate(100, sizeof(encoderData_t));
+
+  // Create encode task
   xTaskCreate(encoderTask, "ENCTSK", 2048, NULL, 10, NULL);
 
   gpioInit();
