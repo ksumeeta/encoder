@@ -127,6 +127,7 @@ void loop() {
         MovPos = 0;
         MovLen = ResetMoveLength;
       }else{
+        MovPos = 0;
         MovLen = MovLen + MoveLengthIncrement;   //Decrease the frequency by Increasing the Movement Lenght to get the pendulum upright
       }  
     }
