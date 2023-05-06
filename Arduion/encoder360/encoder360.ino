@@ -28,18 +28,19 @@ boolean SDir = false;
 boolean LeftEnd = false;
 boolean RightEnd = false;
 
-#define BalDeg1 8
-#define BalDeg2 40
-#define mLeft  1
-#define mRight 0
-#define mSlow  500
-#define mFast  100
-#define MaxMoveLength 1000
-#define ResetMoveLength 200
-#define MoveLengthIncrement 50
+#define BalDeg1 12
+#define BalDeg2 160
+#define mLeft  0
+#define mRight 1
+#define mSlow  750
+#define mFast  750
+#define MaxMoveLength 700
+#define ResetMoveLength 500
+#define MoveLengthIncrement 10
 
 int MovPos = 0;
 int MovLen = ResetMoveLength;
+int AbsPos = 0;
 
 void setup(){ 
   Serial.begin (9600);
@@ -87,36 +88,42 @@ void updateEncoder(){
   lastEncoded = encoded; //store this value for next time
 }
 
-inline void MoveMotor(int Dir, int Delay){
+inline static void MoveMotor(int Dir, int Delay){
   digitalWrite(dirPin, Dir);
   digitalWrite(enPin, LOW);
   
   digitalWrite(stepPin,HIGH); 
-  delayMicroseconds(Delay); 
+  delayMicroseconds(1); 
   
   digitalWrite(stepPin,LOW); 
   delayMicroseconds(Delay); 
 
-  digitalWrite(enPin,HIGH);
+//  digitalWrite(enPin,HIGH);
+  if(Dir){
+    AbsPos++;
+  }else{
+    AbsPos--;
+  }
 }
 
 void loop() { 
-  eValueA = abs(encoderValue);
+  eValue = encoderValue;
+  eValueA = abs(eValue);
   if((eValueA > (720 - BalDeg1)) && (eValueA < (720 + BalDeg1))){       //Pendulum is in Balanced Zone i.e. 1~2 degree variation from upright position. Don't Move Motor
-    MovPos = 0;
-    MovLen = ResetMoveLength;
+//    MovPos = 0;
+//    MovLen = ResetMoveLength;
   }else if((eValueA > (720 - BalDeg2)) && (eValueA < (720 + BalDeg2))){ //Pendulum is in Balancing Zone i.e. 10 degree varation
-    if(PDir){
-      //ToCheck Which Direction and What Delay
-      //Todo Check Left IR Sensor
-      MoveMotor(mLeft, mSlow);
-    }else {
-      //ToCheck Which Direction and What Delay
-      //Todo Check Right IR Sensor
-      MoveMotor(mRight, mSlow);
+    if(eValue < -720){
+      MoveMotor(mLeft, mFast);
+    }else if(eValue < -720 + BalDeg2){
+      MoveMotor(mRight, mFast);
+    }else if(eValue < 720){
+      MoveMotor(mLeft, mFast);
+    }else if(eValue < 720 + BalDeg2){
+      MoveMotor(mRight, mFast);
     }
-    MovPos = 0;
-    MovLen = ResetMoveLength;
+//    MovPos = 0;
+//    MovLen = ResetMoveLength;
   }else{                        //Pendulum not in Balancing Zone. Swing the pendulum to get in balancing Zone
     if(MovPos < MovLen){        //Keep moving Motor in present Swing direction
       MovPos++;
@@ -124,6 +131,14 @@ void loop() {
       SDir = !SDir;
       if(MovPos > MaxMoveLength){                 //Restart to High frequency Movement of pendulum
         //ToDo Move to Center
+        if(AbsPos < 0){
+          SDir = true;
+        }else{
+          SDir = false;
+        }
+        while(AbsPos != 0){
+          MoveMotor(SDir, 1000);
+        }
         MovPos = 0;
         MovLen = ResetMoveLength;
       }else{
